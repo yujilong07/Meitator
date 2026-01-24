@@ -4,10 +4,7 @@
 #include <optional>
 #include <limits>
 
-enum class Extensions{
-    DocxToPDF,
-    PDFtoDocx
-};
+#include "dir.hpp"
 
 std::optional<std::filesystem::path> ask_file_dir()
 {
@@ -102,7 +99,7 @@ std::optional<std::filesystem::path> resolve_output_conflict(const std::filesyst
 
             std::cin >> choice;
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            if (choice >= 3 || choice <= 0)
+            if (choice > 3 || choice <= 0)
                 return std::nullopt; 
             
             switch (choice)
@@ -121,6 +118,7 @@ std::optional<std::filesystem::path> resolve_output_conflict(const std::filesyst
                 }
             } while (true);
             break;
+
             case 2:
             while (true)
             {
@@ -150,11 +148,16 @@ std::optional<std::filesystem::path> resolve_output_conflict(const std::filesyst
                 }
             }
             break;
+            
             case 3:
+                return std::nullopt; 
                 break;
             }
 
+            
         }
+        
     }
+    return std::nullopt;
 
 }

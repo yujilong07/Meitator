@@ -1,8 +1,4 @@
-#include <iostream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <optional>
+#include "prep.hpp"
 
 std::optional<std::string> getLibrePath() {
     #if defined(_WIN32)
