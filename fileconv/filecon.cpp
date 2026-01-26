@@ -1,58 +1,64 @@
 #include "fileconv.hpp"
+#include "dir.hpp"
+#include <iostream>
 
-// Conv(inputPath, targetExtension):
-
-//   
-//     2. Визначити outputDirectory
-//          outputDirectory = inputPath.parent_directory
-
-//     3. Визначити очікуване output-імʼя
-//          baseName = імʼя input без розширення
-//          outputFile = outputDirectory / (baseName + "." + targetExtension)
-
-//     4. Сформувати команду LibreOffice
-//          command =
-//              libreoffice
-//              --headless
-//              --convert-to targetExtension
-//              --outdir outputDirectory
-//              inputPath
-
-//     5. Виконати команду (system)
-
-//     6. Якщо system повернув помилку
-//          повернути failure
-
-//     7. Перевірити: чи існує outputFile
-//          якщо НІ
-//              повернути failure
-
-//     8. Повернути outputFile (success)
-
-
-
-std::optional<std::filesystem::path> Conv(const std::filesystem::path& INpath,const std::string& extension) {
-    // Вихідна директорія та імʼя файлу
+std::optional<std::filesystem::path> Conv(const std::filesystem::path& INpath, const std::string& extension) 
+{
+    // Вихідна директорія та ім'я файлу
     std::filesystem::path OUTpath = INpath.parent_path();
     std::string basename = INpath.stem().string();
     std::filesystem::path outputFile = OUTpath / (basename + "." + extension);
 
+    // !!! Перевіряємо конфлікт перед конвертацією
+    auto resolvedPath = resolve_output_conflict(outputFile);
+    if (!resolvedPath)
+    {
+        std::cout << "Operation cancelled by user.\n";
+        return std::nullopt;
+    }
+
+    // Якщо користувач змінив ім'я, оновлюємо outputFile
+    outputFile = *resolvedPath;
+
     // Формуємо команду LibreOffice
-    std::string command = 
-        "libreoffice --headless --convert-to " + extension +
-        " --outdir \"" + OUTpath.string() + "\" \"" + INpath.string() + "\"";
+    std::string command;
+    
+#if defined(_WIN32)
+    command = "libreoffice --headless --convert-to " + extension +
+              " --outdir \"" + OUTpath.string() + "\" \"" + INpath.string() + "\"";
+#else
+    command = "libreoffice --headless --convert-to " + extension +
+              " --outdir \"" + OUTpath.string() + "\" \"" + INpath.string() + "\" > /dev/null 2>&1";
+#endif
 
-    // Виконуємо команду
+    std::cout << "Converting file... Please wait.\n";
+
     int result = system(command.c_str());
-    if (result != 0) {
-        return std::nullopt;  // Помилка LibreOffice
+    if (result != 0)
+    {
+        std::cout << "LibreOffice conversion command failed.\n";
+        return std::nullopt;
     }
 
-    // Перевіряємо, чи зʼявився файл
-    if (!std::filesystem::exists(outputFile)) {
-        return std::nullopt;  // Помилка конвертації
+    std::filesystem::path defaultOutput = OUTpath / (basename + "." + extension);
+
+    if (!std::filesystem::exists(defaultOutput))
+    {
+        std::cout << "Output file was not created by LibreOffice.\n";
+        return std::nullopt;
     }
 
-    // Успіх — повертаємо шлях до output
+    if (defaultOutput != outputFile)
+    {
+        try {
+            std::filesystem::rename(defaultOutput, outputFile);
+        }
+        catch (const std::filesystem::filesystem_error& e)
+        {
+            std::cout << "Failed to rename output file: " << e.what() << "\n";
+            return std::nullopt;
+        }
+    }
+
     return outputFile;
 }

@@ -39,10 +39,15 @@ std::optional<std::filesystem::path> ask_file_dir()
         std::cout << "  2 - Cancel\n";
         std::cout << "Choice: ";
 
-        int choice{};
-        std::cin >> choice;
-
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::string choiceStr;
+        std::getline(std::cin, choiceStr);
+        
+        int choice = 0;
+        try {
+            choice = std::stoi(choiceStr);
+        } catch (...) {
+            choice = 2; // За замовчуванням Cancel
+        }
 
         if (choice != 1)
         {
@@ -51,75 +56,90 @@ std::optional<std::filesystem::path> ask_file_dir()
     }
 }
 
-bool is_filetype_suitable(const std::filesystem::path& path,Extensions mode){
-    if (!path.has_extension()){
+bool is_filetype_suitable(const std::filesystem::path& path, Extensions mode)
+{
+    if (!path.has_extension())
+    {
         return false;
     }
+    
     std::string extension = path.extension().string();
 
     for (char& c : extension)
     {
-        c = std::tolower(c);
+        c = std::tolower(static_cast<unsigned char>(c));
     }
 
-    if (mode == Extensions::DocxToPDF){
+    if (mode == Extensions::DocxToPDF)
+    {
         return extension == ".docx";
     }
-    else if(mode == Extensions::PDFtoDocx ){
+    else if (mode == Extensions::PDFtoDocx)
+    {
         return extension == ".pdf";
     }
 
     return false;
-
 }
 
-bool file_exists(const std::filesystem::path& path){
-    if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)){
-        return false;
-    }
-    else
-        return true;
+bool file_exists(const std::filesystem::path& path)
+{
+    return std::filesystem::exists(path) && 
+           std::filesystem::is_regular_file(path);
 }
 
-std::optional<std::filesystem::path> resolve_output_conflict(const std::filesystem::path& Outputpath){
-    if (file_exists(Outputpath) == false){
+std::optional<std::filesystem::path> resolve_output_conflict(const std::filesystem::path& Outputpath)
+{
+    if (!file_exists(Outputpath))
+    {
         return Outputpath;
     }
-    if (file_exists(Outputpath)){
-        int choice{};
-        std::string answer{};
-        while (true)
+    
+    while (true)
+    {
+        std::cout << "In this directory exists file with same name: " 
+                  << Outputpath << "\n";
+        std::cout << "What you want to do?\n";
+        std::cout << "  1 - Rewrite existing file,\n";
+        std::cout << "  2 - Change the name of Output(new) file,\n";
+        std::cout << "  3 - Cancel any changes\n";
+        std::cout << "Choice: ";
+
+        std::string choiceStr;
+        std::getline(std::cin, choiceStr);
+        
+        int choice = 0;
+        try {
+            choice = std::stoi(choiceStr);
+        } catch (...) {
+            std::cout << "Invalid input. Try again.\n";
+            continue;
+        }
+
+        if (choice <= 0 || choice > 3)
         {
-            std::cout << "In this directory exists file with same name as you gave: " << Outputpath << "\n" ;
-            std::cout << "What you want to do?\n";
-            std::cout << "  1 - Rewrite existing file,\n";
-            std::cout << "  2 - Change the name of Output(new) file,\n";
-            std::cout << "  3 - Cancel any changes\n";
-            std::cout << "Choice: ";
-
-            std::cin >> choice;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            if (choice > 3 || choice <= 0)
-                return std::nullopt; 
+            std::cout << "Invalid choice. Try again.\n";
+            continue;
+        }
+        
+        switch (choice)
+        {
+        case 1:
+        {
+            std::cout << "Are you sure? (Y/n): ";
+            std::string answer;
+            std::getline(std::cin, answer);
             
-            switch (choice)
+            if (answer == "y" || answer == "Y")
             {
-            case 1:
-            do {
-                std::cout << "Are you sure? (Y/n) \n";
-                std::cin >> answer;
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');  
-                if (answer == "y" || answer == "Y") {
-                    return Outputpath;
-                } else if (answer == "n" || answer == "N") {
-                    break;  
-                } else {
-                    std::cout << "You wrote wrong answer, try again\n";
-                }
-            } while (true);
+                return Outputpath;
+            }
+            // Повертаємось до меню вибору
             break;
+        }
 
-            case 2:
+        case 2:
+        {
             while (true)
             {
                 std::cout << "Enter a new file name (without extension):\n";
@@ -140,24 +160,17 @@ std::optional<std::filesystem::path> resolve_output_conflict(const std::filesyst
                 if (file_exists(newPath))
                 {
                     std::cout << "File \"" << newPath.filename()
-                            << "\" already exists. Try another name.\n";
+                              << "\" already exists. Try another name.\n";
                 }
                 else
                 {
                     return newPath;
                 }
             }
-            break;
-            
-            case 3:
-                return std::nullopt; 
-                break;
-            }
-
-            
         }
         
+        case 3:
+            return std::nullopt;
+        }
     }
-    return std::nullopt;
-
 }
