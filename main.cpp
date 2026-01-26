@@ -1,74 +1,120 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <limits>
+#include <optional>
 
-#include "dirsearch/dir.hpp"   // если там есть нужные объявления
-#include "fileconv/prep.hpp"   // ask_file_dir, is_filetype_suitable, resolve_output_conflict
-#include "fileconv/fileconv.hpp" // Conv
 #include "logo.hpp"
+#include "dirsearch/dir.hpp"
+#include "fileconv/fileconv.hpp"
+#include "fileconv/prep.hpp"
 
-int showMenu(){
-    for(int i = 0; i < 5; i++) {
-        std::cout << MEITATOR_LOGO[i] << std::endl;
-    }
-    std::cout << "============================================" << std::endl;
-    std::cout << " " << std::endl;
-    std::cout << "Welcome to file extension changer!" <<std::endl;
-    std::cout << "Choose your option:" << std::endl;
-    std::cout << "    0: DocxToPDF" << std::endl;
-    std::cout << "    1: PDFtoDocx" << std::endl;
-    std::cout << "    2: Exit" << std::endl;
-    std:: cout << "Enter choice (1-2): ";
-    int Inchoice;
-    std:: cin >> Inchoice;
-    return Inchoice;
+std::optional<int> readInt(const std::string& prompt, int min, int max);
+
+int showMenu()
+{
+    std::cout << "DEBUG: Entering showMenu()\n" << std::flush;
+    
+    for(int i = 0; i < 5; i++)
+        std::cout << MEITATOR_LOGO[i] << '\n';
+
+    std::cout << "============================================\n" << std::flush;
+    std::cout << "Welcome to file extension changer!\n" << std::flush;
+    std::cout << "Choose your option:\n" << std::flush;
+    std::cout << "  0: DocxToPDF\n" << std::flush;
+    std::cout << "  1: PDFtoDocx\n" << std::flush;
+    std::cout << "  2: Exit\n" << std::flush;
+
+    std::cout << "DEBUG: Before readInt()\n" << std::flush;
+    auto choice = readInt("Enter choice (0-2): ", 0, 2);
+    std::cout << "DEBUG: After readInt()\n" << std::flush;
+    
+    if (!choice)
+        return -1;
+
+    return *choice;
 }
 
-int main() {
-    int choice;
+std::optional<int> readInt(const std::string& prompt, int min, int max)
+{
+    std::cout << "DEBUG: Inside readInt()\n" << std::flush;
+    
+    while (true)
+    {
+        std::cout << prompt << std::flush;
 
-    while (true) {
-        choice = showMenu();
+        std::string line;
+        std::getline(std::cin, line);
 
-        if (choice == 2) break;  // Exit
+        std::cout << "DEBUG: Read line: '" << line << "'\n" << std::flush;
 
-        // Визначаємо розширення залежно від вибору
-        std::string targetExt;
-        if (choice == 0) targetExt = "pdf";
-        else if (choice == 1) targetExt = "docx";
-        else {
-            std::cout << "Invalid choice. Try again.\n";
-            continue;
+        if (line.empty())
+            return std::nullopt;
+
+        try {
+            int value = std::stoi(line);
+            if (value < min || value > max)
+                throw std::out_of_range("range");
+
+            return value;
         }
-
-        // 1. Запитуємо файл у користувача
-        auto inputOpt = ask_file_dir();
-        if (!inputOpt) continue;  // користувач відмінив
-
-        // 2. Перевіряємо формат
-        if (!is_filetype_suitable(*inputOpt, (choice == 0 ? Extensions::DocxToPDF : Extensions::PDFtoDocx))) {
-            std::cout << "Invalid file type for the selected conversion.\n";
-            continue;
+        catch (...) {
+            std::cout << "Invalid input. Try again.\n" << std::flush;
         }
-
-        // 3. Формуємо вихідний шлях
-        std::filesystem::path outputPath = inputOpt->parent_path() / ((*inputOpt).stem().string() + "." + targetExt);
-
-        // 4. Перевіряємо, чи не перезаписуємо файл
-        auto resolvedOutput = resolve_output_conflict(outputPath);
-        if (!resolvedOutput) continue;  // користувач відмінив
-
-        // 5. Конвертуємо
-        auto result = Conv(*inputOpt, targetExt);
-
-        if (result) {
-            std::cout << "Conversion successful! Output: " << result->string() << "\n";
-        } else {
-            std::cout << "Conversion failed. Check LibreOffice installation or file permissions.\n";
-        }
-
-        std::cout << "============================================\n";
     }
+}
 
+int main()
+{
+    std::cout << "Starting Meitator...\n" << std::flush;
+    
+    std::cout << "DEBUG: Before checkLibreOffice()\n" << std::flush;
+    if (!checkLibreOffice())
+    {
+        std::cout << "Warning: LibreOffice may not be properly configured.\n" << std::flush;
+        return 1;
+    }
+    
+    std::cout << "DEBUG: After checkLibreOffice(), entering main loop\n" << std::flush;
+
+    while (true)
+    {
+        std::cout << "DEBUG: Top of while loop\n" << std::flush;
+        
+        int choice = showMenu();
+        
+        std::cout << "DEBUG: Got choice: " << choice << "\n" << std::flush;
+        
+        if (choice == 2)
+            break;
+        if (choice < 0)
+            continue;
+
+        std::string targetExt =
+            (choice == 0) ? "pdf" :
+            (choice == 1) ? "docx" : "";
+
+        auto inputOpt = ask_file_dir();
+        if (!inputOpt)
+            continue;
+
+        if (!is_filetype_suitable(
+                *inputOpt,
+                choice == 0 ? Extensions::DocxToPDF : Extensions::PDFtoDocx))
+        {
+            std::cout << "Invalid file type.\n" << std::flush;
+            continue;
+        }
+
+        auto result = Conv(*inputOpt, targetExt);
+        if (result)
+            std::cout << "Success: " << result->string() << "\n" << std::flush;
+        else
+            std::cout << "Conversion failed.\n" << std::flush;
+
+        std::cout << "============================================\n" << std::flush;
+    }
+    
+    std::cout << "Goodbye!\n" << std::flush;
     return 0;
 }
