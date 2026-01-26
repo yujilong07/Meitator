@@ -1,11 +1,10 @@
-#pragma once
+#ifndef FILECONV_HPP
+#define FILECONV_HPP
 
 #include <filesystem>
-#include <iostream>
+#include <optional>
 #include <string>
-#include <cstdlib>  
-#include "prep.hpp"
 
+std::optional<std::filesystem::path> Conv(const std::filesystem::path& INpath, const std::string& extension);
 
-std::optional<std::filesystem::path>
-Conv(const std::filesystem::path& INpath, const std::string& extension);
+#endif 

@@ -1,10 +1,13 @@
-#pragma once
+#ifndef PREP_HPP
+#define PREP_HPP
 
 #include <iostream>
-#include <filesystem>
 #include <string>
 #include <vector>
+#include <filesystem>
 #include <optional>
 
 std::optional<std::string> getLibrePath();
 bool checkLibreOffice();
+
+#endif 
