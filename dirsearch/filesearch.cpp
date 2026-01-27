@@ -46,7 +46,7 @@ std::optional<std::filesystem::path> ask_file_dir()
         try {
             choice = std::stoi(choiceStr);
         } catch (...) {
-            choice = 2; // За замовчуванням Cancel
+            choice = 2; 
         }
 
         if (choice != 1)
@@ -134,7 +134,6 @@ std::optional<std::filesystem::path> resolve_output_conflict(const std::filesyst
             {
                 return Outputpath;
             }
-            // Повертаємось до меню вибору
             break;
         }
 

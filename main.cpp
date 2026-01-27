@@ -13,7 +13,7 @@ std::optional<int> readInt(const std::string& prompt, int min, int max);
 
 int showMenu()
 {
-    std::cout << "DEBUG: Entering showMenu()\n" << std::flush;
+    // std::cout << "DEBUG: Entering showMenu()\n" << std::flush;
     
     for(int i = 0; i < 5; i++)
         std::cout << MEITATOR_LOGO[i] << '\n';
@@ -25,9 +25,9 @@ int showMenu()
     std::cout << "  1: PDFtoDocx\n" << std::flush;
     std::cout << "  2: Exit\n" << std::flush;
 
-    std::cout << "DEBUG: Before readInt()\n" << std::flush;
+    // std::cout << "DEBUG: Before readInt()\n" << std::flush;
     auto choice = readInt("Enter choice (0-2): ", 0, 2);
-    std::cout << "DEBUG: After readInt()\n" << std::flush;
+    // std::cout << "DEBUG: After readInt()\n" << std::flush;
     
     if (!choice)
         return -1;
@@ -37,7 +37,7 @@ int showMenu()
 
 std::optional<int> readInt(const std::string& prompt, int min, int max)
 {
-    std::cout << "DEBUG: Inside readInt()\n" << std::flush;
+    // std::cout << "DEBUG: Inside readInt()\n" << std::flush;
     
     while (true)
     {
@@ -46,7 +46,7 @@ std::optional<int> readInt(const std::string& prompt, int min, int max)
         std::string line;
         std::getline(std::cin, line);
 
-        std::cout << "DEBUG: Read line: '" << line << "'\n" << std::flush;
+        // std::cout << "DEBUG: Read line: '" << line << "'\n" << std::flush;
 
         if (line.empty())
             return std::nullopt;
@@ -68,22 +68,22 @@ int main()
 {
     std::cout << "Starting Meitator...\n" << std::flush;
     
-    std::cout << "DEBUG: Before checkLibreOffice()\n" << std::flush;
+    // std::cout << "DEBUG: Before checkLibreOffice()\n" << std::flush;
     if (!checkLibreOffice())
     {
         std::cout << "Warning: LibreOffice may not be properly configured.\n" << std::flush;
         return 1;
     }
     
-    std::cout << "DEBUG: After checkLibreOffice(), entering main loop\n" << std::flush;
+    // std::cout << "DEBUG: After checkLibreOffice(), entering main loop\n" << std::flush;
 
     while (true)
     {
-        std::cout << "DEBUG: Top of while loop\n" << std::flush;
+        // std::cout << "DEBUG: Top of while loop\n" << std::flush;
         
         int choice = showMenu();
         
-        std::cout << "DEBUG: Got choice: " << choice << "\n" << std::flush;
+        // std::cout << "DEBUG: Got choice: " << choice << "\n" << std::flush;
         
         if (choice == 2)
             break;

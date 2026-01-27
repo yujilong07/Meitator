@@ -35,12 +35,10 @@ std::optional<std::string> getLibrePath() {
 
 
 bool checkLibreOffice() {
-    // СПРОЩЕНА ВЕРСІЯ - не викликає system() щоб не зависати
-    std::cout << "Checking for LibreOffice..." << std::flush;
+
+    // std::cout << "Checking for LibreOffice..." << std::flush;
     
     #if defined(__linux__) || defined(__APPLE__)
-        // На Linux просто перевіряємо чи є команда в PATH
-        // За допомогою which (швидко і не зависає)
         int result = system("which libreoffice > /dev/null 2>&1");
         if (result == 0) {
             std::cout << " Found!\n" << std::flush;
